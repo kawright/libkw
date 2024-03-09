@@ -1,0 +1,11 @@
+# Copyright (C) 2024  KA Wright
+
+# Build artifacts
+build/*
+docs/build
+
+# Python
+__pycache__
+
+# VIM
+.*.swp

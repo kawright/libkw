@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+
+# Copyright (C) 2024  KA Wright
+
+"""Build script for the `libkw` project."""
+
+from argparse import ArgumentParser
+from os import system
+from os.path import isdir
+
+import script.lib.manifest as manifest
+
+FLAGS = "-Isrc/include -g -Wall -fpic"
+
+def main():
+
+    parser = ArgumentParser()
+    parser.add_argument("-c", "--clean", action="store_true")
+    parser.add_argument("-t", "--tests-only", action="store_true")
+    parser.add_argument("-l", "--libs-only", action="store_true")
+    args = parser.parse_args()
+
+    system("clear")
+
+    if args.clean:
+        print("Cleaning build artifacts")
+        system("rm -Rf build")
+        print("Done!")
+        return
+
+    if not isdir("build"):
+        print("Creating build directory structure")
+        system("mkdir build")
+        system("mkdir build/obj")
+        system("mkdir build/lib")
+        system("mkdir build/test")
+        
+        for key in manifest.tests:
+            system(f"mkdir build/test/{key}")
+
+    if not args.tests_only:
+        print("Building object files")
+        for obj in manifest.objs:
+            system(f"gcc {FLAGS} -c src/{obj}.c -o build/obj/{obj}.o")
+        
+        print("Building static library")
+        cmd = f"ar rcs build/lib/libkw.a"
+        for obj in manifest.objs:
+            cmd += f" build/obj/{obj}.o"
+        system(cmd)
+
+        print("Building shared library")
+        cmd = f"gcc -shared -o build/lib/libkw.so"
+        for obj in manifest.objs:
+            cmd += f" build/obj/{obj}.o"
+        system(cmd)
+
+    if not args.libs_only:
+        print("Building test executables")
+        for testdir in manifest.tests:
+            for test in manifest.tests[testdir]:
+                cmd = f"gcc {FLAGS} -o build/test/{testdir}/{test}"
+                for obj in manifest.objs:
+                    cmd += f" build/obj/{obj}.o"
+                cmd += f" test/{testdir}/{test}.c"
+                system(cmd)
+
+    print("Done!")
+
+if __name__ == "__main__":
+    main()
